@@ -1,0 +1,1615 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EarthAudio-365.25 — Earth Information Jukebox</title>
+
+    <!-- Load Plotly via official CDN -->
+    <script
+      src="https://cdn.plot.ly/plotly-2.35.2.min.js"
+      charset="utf-8"
+    ></script>
+
+    <style>
+      :root {
+        --bg: #0b0f14;
+        --panel: #111821;
+        --panel2: #161f2b;
+        --line: #293442;
+        --text: #f3f6fa;
+        --muted: #91a0b3;
+        --cyan: #00d9ff;
+        --yellow: #ffd84d;
+        --pink: #ff3b81;
+        --green: #43e88a;
+        --danger: #ff174f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: radial-gradient(circle at top, #152333 0, #0b0f14 45%);
+        color: var(--text);
+        font-family:
+          Inter,
+          Segoe UI,
+          Arial,
+          sans-serif;
+      }
+
+      .app {
+        max-width: 1450px;
+        margin: auto;
+        padding: 24px;
+      }
+
+      header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        margin-bottom: 18px;
+      }
+
+      h1 {
+        margin: 8px 0;
+        font-size: clamp(2rem, 4vw, 3.2rem);
+        color: var(--text);
+      }
+
+      h2 {
+        margin: 0 0 14px;
+        font-size: 1.1rem;
+      }
+
+      p {
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .tag {
+        display: inline-block;
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--cyan);
+        font-size: 0.85rem;
+      }
+
+      .panel {
+        background: rgba(17, 24, 33, 0.92);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 18px;
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.18);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        gap: 18px;
+      }
+
+      .controls {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      button,
+      input[type="file"] {
+        font: inherit;
+      }
+
+      button {
+        background: #1c2735;
+        color: var(--text);
+        border: 1px solid #3a4858;
+        border-radius: 999px;
+        padding: 10px 13px;
+        cursor: pointer;
+        transition: 0.15s;
+      }
+
+      button:hover,
+      button:focus {
+        background: #263548;
+        transform: translateY(-1px);
+        outline: 2px solid var(--cyan);
+      }
+
+      button.primary {
+        background: #087e96;
+        border-color: #00b9dc;
+      }
+
+      .transport {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .year-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .year {
+        font-size: 2.3rem;
+        font-weight: 800;
+        letter-spacing: -1px;
+      }
+
+      .status {
+        padding: 11px 12px;
+        border-radius: 9px;
+        font-weight: 700;
+        text-align: center;
+        border: 1px solid #238636;
+        background: #0e4429;
+        color: #54ed96;
+      }
+
+      .status.alert {
+        background: #5e1024;
+        border-color: var(--danger);
+        color: #fff;
+        box-shadow: 0 0 18px rgba(255, 23, 79, 0.25);
+      }
+
+      .status.landmark {
+        background: #2a2452;
+        border-color: #a88bff;
+        color: #ddd4ff;
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 9px;
+      }
+
+      .metric {
+        background: var(--panel2);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 10px;
+        cursor: pointer;
+      }
+
+      .metric:hover,
+      .metric:focus {
+        border-color: var(--cyan);
+        outline: none;
+      }
+
+      .metric small {
+        display: block;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+
+      .metric strong {
+        font-size: 1.15rem;
+      }
+
+      .slider {
+        width: 100%;
+        accent-color: var(--cyan);
+      }
+
+      .sound-demo-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .sound-card {
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #0d141c;
+        transition: 0.2s;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        justify-content: space-between;
+      }
+
+      .sound-card:hover,
+      .sound-card:focus-within {
+        border-color: var(--cyan);
+        background: #141f2c;
+      }
+
+      .sound-card b {
+        font-size: 0.92rem;
+      }
+
+      .sound-card span {
+        font-size: 0.78rem;
+        color: var(--muted);
+        line-height: 1.35;
+      }
+
+      .card-actions {
+        display: flex;
+        gap: 6px;
+        margin-top: 6px;
+      }
+
+      .btn-sm {
+        font-size: 0.75rem;
+        padding: 5px 9px;
+        border-radius: 6px;
+        flex: 1;
+        text-align: center;
+      }
+
+      .btn-download {
+        background: #162a3d;
+        border-color: #2a435d;
+        color: var(--cyan);
+      }
+
+      .btn-download:hover {
+        background: #213b54;
+      }
+
+      #plot {
+        width: 100%;
+        height: 520px;
+      }
+
+      .hint {
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin: 6px 0 0;
+      }
+
+      .now-playing {
+        border-left: 3px solid var(--cyan);
+        padding-left: 11px;
+      }
+
+      .small-btns {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 7px;
+      }
+
+      .news-cards {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-top: 18px;
+      }
+
+      .news-card {
+        background: var(--panel2);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 14px 16px;
+        cursor: pointer;
+        transition:
+          transform 0.15s ease,
+          border-color 0.15s ease;
+      }
+
+      .news-card:hover,
+      .news-card:focus {
+        transform: translateY(-2px);
+        border-color: var(--cyan);
+        outline: none;
+      }
+
+      .news-card .badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+      }
+
+      .badge-2023 {
+        background: #2a2452;
+        color: #a88bff;
+        border: 1px solid #4a3e80;
+      }
+
+      .badge-2025 {
+        background: #0e4429;
+        color: #54ed96;
+        border: 1px solid #238636;
+      }
+
+      .news-card h3 {
+        margin: 0 0 6px;
+        font-size: 0.98rem;
+        color: var(--text);
+        line-height: 1.35;
+      }
+
+      .news-card p {
+        margin: 0;
+        font-size: 0.82rem;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      footer {
+        color: #718096;
+        font-size: 0.78rem;
+        margin-top: 18px;
+        text-align: center;
+      }
+
+      @media (max-width: 950px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        #plot {
+          height: 430px;
+        }
+      }
+
+      @media (max-width: 600px) {
+        .app {
+          padding: 12px;
+        }
+
+        .sound-demo-grid,
+        .metrics,
+        .news-cards {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="app">
+      <header
+        tabindex="0"
+        id="appHeader"
+        aria-label="EarthAudio 365.25 Application Header"
+      >
+        <span class="tag" id="tagline"
+          >NASA Space Apps Challenge 2026 · The Earth Information Jukebox</span
+        >
+        <h1 id="appTitle">EarthAudio-365.25</h1>
+        <p id="appSubtitle">
+          Think of climate data as music. Every signal has a fixed meaning.
+        </p>
+        <div class="tag" id="dataState" style="margin-top: 8px" tabindex="0">
+          Loading Earth data…
+        </div>
+      </header>
+
+      <div class="grid">
+        <aside class="controls">
+          <!-- SECTION 1: ISOLATED TREND SOUND LANGUAGE -->
+          <section
+            class="panel"
+            aria-label="The Sound Language Preview Section"
+          >
+            <h2>🎼 Individual Indicator Trends</h2>
+            <div class="sound-demo-grid">
+              <!-- CO2 Card -->
+              <div class="sound-card" id="demoCo2">
+                <div>
+                  <b style="color: var(--cyan)">CO₂ Trend (Pitch)</b>
+                  <span
+                    >Listen to how CO₂ rises in pitch alone from 2002 to
+                    present.</span
+                  >
+                </div>
+                <div class="card-actions">
+                  <button
+                    class="btn-sm"
+                    onclick="playSingleTrend('co2')"
+                    aria-label="Listen to CO2 Trend Audio"
+                  >
+                    ▶ Listen
+                  </button>
+                  <button
+                    class="btn-sm btn-download"
+                    onclick="downloadSingleTrend('co2')"
+                    aria-label="Download CO2 Trend Audio"
+                  >
+                    💾 Download
+                  </button>
+                </div>
+              </div>
+
+              <!-- Temperature Card -->
+              <div class="sound-card" id="demoTemp">
+                <div>
+                  <b style="color: var(--yellow)">Temp Trend (Brightness)</b>
+                  <span
+                    >Listen to temperature anomaly harmonics brighten over
+                    time.</span
+                  >
+                </div>
+                <div class="card-actions">
+                  <button
+                    class="btn-sm"
+                    onclick="playSingleTrend('temp')"
+                    aria-label="Listen to Temperature Trend Audio"
+                  >
+                    ▶ Listen
+                  </button>
+                  <button
+                    class="btn-sm btn-download"
+                    onclick="downloadSingleTrend('temp')"
+                    aria-label="Download Temperature Trend Audio"
+                  >
+                    💾 Download
+                  </button>
+                </div>
+              </div>
+
+              <!-- Sea Level Card -->
+              <div class="sound-card" id="demoSea">
+                <div>
+                  <b style="color: var(--green)">Sea Level Trend (Rhythm)</b>
+                  <span
+                    >Listen to pulse density accelerate as sea levels
+                    rise.</span
+                  >
+                </div>
+                <div class="card-actions">
+                  <button
+                    class="btn-sm"
+                    onclick="playSingleTrend('sea')"
+                    aria-label="Listen to Sea Level Trend Audio"
+                  >
+                    ▶ Listen
+                  </button>
+                  <button
+                    class="btn-sm btn-download"
+                    onclick="downloadSingleTrend('sea')"
+                    aria-label="Download Sea Level Trend Audio"
+                  >
+                    💾 Download
+                  </button>
+                </div>
+              </div>
+
+              <!-- Antarctica Card -->
+              <div class="sound-card" id="demoMass">
+                <div>
+                  <b style="color: var(--pink)">Antarctica (Bass Loss)</b>
+                  <span
+                    >Listen to deep bass frequencies shift as ice mass
+                    melts.</span
+                  >
+                </div>
+                <div class="card-actions">
+                  <button
+                    class="btn-sm"
+                    onclick="playSingleTrend('mass')"
+                    aria-label="Listen to Antarctic Mass Loss Audio"
+                  >
+                    ▶ Listen
+                  </button>
+                  <button
+                    class="btn-sm btn-download"
+                    onclick="downloadSingleTrend('mass')"
+                    aria-label="Download Antarctic Mass Loss Audio"
+                  >
+                    💾 Download
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-label="Musical Earth Player Controls">
+            <h2>🔊 Musical Earth Player</h2>
+            <div class="transport">
+              <button
+                id="playBtn"
+                class="primary"
+                aria-label="Play or Pause Journey"
+              >
+                ▶ Play Journey
+              </button>
+              <button id="stopBtn" aria-label="Stop Playback">■ Stop</button>
+            </div>
+            <div class="small-btns" style="margin-top: 8px">
+              <button id="prevBtn" aria-label="Previous Year">← Year</button>
+              <button id="replayBtn" aria-label="Replay Active Year">
+                ↻ Replay
+              </button>
+              <button id="nextBtn" aria-label="Next Year">Year →</button>
+            </div>
+
+            <div style="margin-top: 16px" class="year-row">
+              <div>
+                <div class="year" id="year">—</div>
+                <div class="hint">active climate year</div>
+              </div>
+              <div id="eventEmoji" style="font-size: 2rem">🌎</div>
+            </div>
+
+            <input
+              id="yearSlider"
+              class="slider"
+              type="range"
+              min="0"
+              max="0"
+              value="0"
+              aria-label="Year Selection Slider"
+            />
+
+            <div id="status" class="status" tabindex="0">Waiting for data…</div>
+
+            <div class="now-playing" style="margin-top: 14px" tabindex="0">
+              <strong id="soundTitle">Ready</strong>
+              <div class="hint" id="soundDescription">
+                Connecting to public EarthAudio data APIs…
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-label="Selected Year Climate Indicators">
+            <h2>📊 Selected Year Data</h2>
+            <div class="metrics">
+              <div class="metric" id="mCo2" tabindex="0">
+                <small>CO₂</small><strong id="co2">—</strong>
+              </div>
+              <div class="metric" id="mTemp" tabindex="0">
+                <small>Temperature</small><strong id="temp">—</strong>
+              </div>
+              <div class="metric" id="mMass" tabindex="0">
+                <small>Antarctic mass</small><strong id="mass">—</strong>
+              </div>
+              <div class="metric" id="mSea" tabindex="0">
+                <small>Sea level</small><strong id="sea">—</strong>
+              </div>
+            </div>
+          </section>
+        </aside>
+
+        <main class="panel">
+          <h2>📈 Earth Signals → Music</h2>
+          <div
+            id="plot"
+            tabindex="0"
+            aria-label="Climate indicator interactive plot graph"
+          ></div>
+          <p class="hint">
+            The vertical line is the active year. Hover or tap to hear the
+            combined sonification.
+          </p>
+
+          <div class="news-cards">
+            <article
+              class="news-card"
+              tabindex="0"
+              id="news2025"
+              aria-label="2025 Climate Update Article"
+            >
+              <span class="badge badge-2025">Climate Update · 2025</span>
+              <h3>Record Marine Heatwaves & Global GHG Peaks</h3>
+              <p>
+                Global indicators tracked 65 days of widespread marine heatwaves
+                in 2025, alongside peak GHG concentrations and accelerated ocean
+                heat accumulation across major basins.
+              </p>
+            </article>
+
+            <article
+              class="news-card"
+              tabindex="0"
+              id="news2023"
+              aria-label="2023 Climate Landmark Article"
+            >
+              <span class="badge badge-2023">Climate Landmark · 2023</span>
+              <h3>Earth Shatters Surface Temperature Thresholds</h3>
+              <p>
+                Confirmed as the warmest calendar year on record at the time,
+                2023 saw every single day exceed 1°C above pre-industrial
+                baselines alongside record-low Antarctic sea ice extents.
+              </p>
+            </article>
+          </div>
+        </main>
+      </div>
+
+      <footer>
+        EarthAudio-365.25 · Public GitHub data APIs · Browser-native
+        sonification · C minor pentatonic vocabulary
+      </footer>
+    </div>
+
+    <script>
+  const DATA_API = {
+    co2: "https://cdn.jsdelivr.net/gh/khurshida333/EarthAudio-365.25-Apis@main/Carbon_Dioxide.json",
+    sea: "https://cdn.jsdelivr.net/gh/khurshida333/EarthAudio-365.25-Apis@main/sea_level.json",
+    temperature:
+      "https://cdn.jsdelivr.net/gh/khurshida333/EarthAudio-365.25-Apis@main/land_ocean_temperature_index.json",
+    antarctica:
+      "https://cdn.jsdelivr.net/gh/khurshida333/EarthAudio-365.25-Apis@main/antarctica_mass.json",
+  };
+
+  let rows = [];
+  let currentIndex = 0;
+  let timer = null;
+  let playing = false;
+  let autoPlayedEntry = false;
+  let isAudioPlaying = false; 
+
+  const MIDI = [48, 51, 53, 55, 58, 60, 63, 65, 67, 70, 72, 75, 77, 79, 82];
+  const FREQS = MIDI.map((m) => 440 * Math.pow(2, (m - 69) / 12));
+  const STEP_MS = 900;
+
+  const $ = (id) => document.getElementById(id);
+
+  function clamp(x, a, b) {
+    return Math.max(a, Math.min(b, x));
+  }
+  function scale(x, a, b, c, d) {
+    return c + ((x - a) / (b - a || 1)) * (d - c);
+  }
+  function normalize(values, x) {
+    const a = Math.min(...values),
+      b = Math.max(...values);
+    return (x - a) / (b - a || 1);
+  }
+  function quantize(freq) {
+    return FREQS.reduce(
+      (best, f) => (Math.abs(f - freq) < Math.abs(best - freq) ? f : best),
+      FREQS[0]
+    );
+  }
+
+  /* ---------------- Master Sound & Speech Cancelation ---------------- */
+  function stopAllAudioAndSpeech() {
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    isAudioPlaying = false;
+  }
+
+  /* ---------------- Speech Synthetic Voiceover Engine ---------------- */
+  function playEntryHeaderVoice() {
+    if (autoPlayedEntry || !("speechSynthesis" in window)) return;
+    autoPlayedEntry = true;
+
+    stopAllAudioAndSpeech();
+
+    const titleUtterance = new SpeechSynthesisUtterance("EarthAudio-365.25");
+    titleUtterance.volume = 1.0;
+    titleUtterance.pitch = 0.95;
+    titleUtterance.rate = 0.95;
+
+    const subtitleUtterance = new SpeechSynthesisUtterance(
+      "Think of climate data as music. Every signal has a fixed meaning."
+    );
+    subtitleUtterance.volume = 1.0;
+    subtitleUtterance.pitch = 1.0;
+    subtitleUtterance.rate = 1.0;
+
+    titleUtterance.onend = () => {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.speak(subtitleUtterance);
+      }
+    };
+
+    window.speechSynthesis.speak(titleUtterance);
+  }
+
+  if ("speechSynthesis" in window) {
+    if (speechSynthesis.getVoices().length !== 0) {
+      playEntryHeaderVoice();
+    } else {
+      speechSynthesis.onvoiceschanged = () => playEntryHeaderVoice();
+    }
+  }
+  window.addEventListener("DOMContentLoaded", () => {
+    playEntryHeaderVoice();
+  });
+
+  /* ---------------- State Locks for Audio & Speech ---------------- */
+  function speak(text, volume = 1.0, pitch = 1.0, rate = 1.0) {
+    if (!("speechSynthesis" in window)) return;
+    if (playing || isAudioPlaying) return;
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.volume = volume;
+    utterance.pitch = pitch;
+    utterance.rate = rate;
+    window.speechSynthesis.speak(utterance);
+  }
+
+  /* ---------------- Data Loader ---------------- */
+  async function fetchJSON(url, label) {
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok)
+      throw new Error(`${label} API returned HTTP ${response.status}`);
+    const data = await response.json();
+    if (!Array.isArray(data))
+      throw new Error(`${label} API did not return a JSON array.`);
+    return data;
+  }
+
+  function findColumn(obj, candidates) {
+    const keys = Object.keys(obj);
+    for (const c of candidates) {
+      const exact = keys.find((k) => k.toLowerCase() === c.toLowerCase());
+      if (exact) return exact;
+    }
+    for (const c of candidates) {
+      const fuzzy = keys.find((k) =>
+        k.toLowerCase().includes(c.toLowerCase())
+      );
+      if (fuzzy) return fuzzy;
+    }
+    return null;
+  }
+
+  function numeric(v) {
+    if (v === undefined || v === null || v === "") return NaN;
+    return Number(String(v).replace(/,/g, ""));
+  }
+
+  function yearFromRow(o) {
+    const key = findColumn(o, ["year", "Year"]);
+    if (key) return Math.floor(numeric(o[key]));
+    const key2 = findColumn(o, ["decimal date", "decimal_date"]);
+    return key2 ? Math.floor(numeric(o[key2])) : NaN;
+  }
+
+  function averageByYear(parsed, valueCandidates) {
+    const map = new Map();
+    for (const o of parsed) {
+      const y = yearFromRow(o);
+      const key = findColumn(o, valueCandidates);
+      const v = key ? numeric(o[key]) : NaN;
+      if (Number.isFinite(y) && Number.isFinite(v)) {
+        if (!map.has(y)) map.set(y, []);
+        map.get(y).push(v);
+      }
+    }
+    return new Map(
+      [...map].map(([y, vs]) => [
+        y,
+        vs.reduce((a, b) => a + b, 0) / vs.length,
+      ])
+    );
+  }
+
+  function temperatureByYear(parsed) {
+    const out = new Map();
+    for (const o of parsed) {
+      const y = yearFromRow(o);
+      const key = findColumn(o, [
+        "No_Smoothing",
+        "No Smoothing",
+        "temp_index",
+        "Temperature",
+      ]);
+      const v = key ? numeric(o[key]) : NaN;
+      if (Number.isFinite(y) && Number.isFinite(v)) out.set(y, v);
+    }
+    return out;
+  }
+
+  async function loadData() {
+    try {
+      $("dataState").textContent = "Loading public Earth data…";
+      $("status").textContent = "Connecting to the four public data APIs…";
+
+      const [co2Data, seaData, tempData, massData] = await Promise.all([
+        fetchJSON(DATA_API.co2, "CO₂"),
+        fetchJSON(DATA_API.sea, "Sea level"),
+        fetchJSON(DATA_API.temperature, "Temperature"),
+        fetchJSON(DATA_API.antarctica, "Antarctica mass"),
+      ]);
+
+      const temp = temperatureByYear(tempData);
+      const co2 = averageByYear(co2Data, [
+        "monthly average",
+        "co2",
+        "Carbon Dioxide",
+      ]);
+      const mass = averageByYear(massData, [
+        "antarctic mass",
+        "antarctica mass",
+        "mass",
+      ]);
+      const sea = averageByYear(seaData, [
+        "gmsl",
+        "sea level",
+        "sea_level",
+      ]);
+
+      const years = [...temp.keys()]
+        .filter((y) => co2.has(y) && mass.has(y) && sea.has(y))
+        .sort((a, b) => a - b);
+
+      rows = years.map((year) => ({
+        year,
+        temp: temp.get(year),
+        co2: co2.get(year),
+        mass: mass.get(year),
+        sea: sea.get(year),
+      }));
+
+      if (!rows.length)
+        throw new Error(
+          "The four public APIs did not share usable year/value data."
+        );
+
+      prepareRows();
+
+      const rangeText = `✓ Public data connected · ${rows[0].year}–${rows[rows.length - 1].year}`;
+      $("dataState").textContent = rangeText;
+
+      currentIndex = 0;
+      $("yearSlider").max = rows.length - 1;
+      $("yearSlider").value = 0;
+      render();
+
+      playDataLoadedChime();
+      speakIntroSequence(rangeText);
+    } catch (err) {
+      $("dataState").textContent = "⚠ Public data connection failed";
+      $("status").textContent = "Could not load the Earth data";
+      $("soundDescription").textContent =
+        `${err.message} Check your internet connection.`;
+      speak("Public data connection failed. Please check connection.");
+    }
+  }
+
+  function prepareRows() {
+    const co2s = rows.map((r) => r.co2),
+      temps = rows.map((r) => r.temp),
+      masses = rows.map((r) => r.mass),
+      seas = rows.map((r) => r.sea);
+    rows.forEach((r) => {
+      r.co2n = normalize(co2s, r.co2);
+      r.tempn = normalize(temps, r.temp);
+      r.massn = normalize(masses, r.mass);
+      r.sean = normalize(seas, r.sea);
+
+      r.co2Freq = quantize(
+        scale(r.co2, Math.min(...co2s), Math.max(...co2s), 130, 523.25)
+      );
+      r.bassFreq = quantize(
+        scale(
+          -r.mass,
+          Math.min(...masses.map((x) => -x)),
+          Math.max(...masses.map((x) => -x)),
+          55,
+          130
+        )
+      );
+      r.alarm = r.co2 > 400 || r.temp >= 1.0;
+    });
+  }
+
+  function render() {
+    if (!rows.length) return;
+    const r = rows[currentIndex];
+    $("year").textContent = r.year;
+    $("yearSlider").value = currentIndex;
+    $("co2").textContent = r.co2.toFixed(1) + " ppm";
+    $("temp").textContent = r.temp.toFixed(2) + " °C";
+    $("mass").textContent = r.mass.toFixed(1) + " GT";
+    $("sea").textContent = r.sea.toFixed(1) + " mm";
+
+    let status = "NORMAL CONDITIONS",
+      cls = "status",
+      emoji = "🌎",
+      title = "Soft harmonic Earth texture";
+    let desc =
+      "CO₂ sets the melody; temperature shapes brightness; sea level sets pulse density; Antarctic loss strengthens the bass.";
+
+    if (r.year === 2015) {
+      status = "📌 2015 · PARIS AGREEMENT";
+      cls = "status landmark";
+      emoji = "📌";
+      title = "Landmark chime";
+      desc =
+        "A distinct C6 → G6 bell-like motif marks the 2015 historical milestone.";
+    } else if (r.year === 2023) {
+      status = "🔥 2023 · WARMEST YEAR ON RECORD";
+      cls = "status landmark";
+      emoji = "🔥";
+      title = "Rising landmark motif";
+      desc =
+        "A rising motif marks 2023 while climate texture reflects that year's indicators.";
+    } else if (r.alarm) {
+      status = `🚨 THRESHOLD EXCEEDED · ${r.year}`;
+      cls = "status alert";
+      emoji = "⚠️";
+      title = "Dissonant warning motif";
+      desc =
+        "The musical texture becomes tense when CO₂ exceeds 400 ppm or temperature reaches 1.0 °C.";
+    }
+
+    $("status").className = cls;
+    $("status").textContent = status;
+    $("eventEmoji").textContent = emoji;
+    $("soundTitle").textContent = title;
+    $("soundDescription").textContent = desc;
+
+    drawPlot();
+  }
+
+  function drawPlot() {
+    const years = rows.map((r) => r.year);
+    const traces = [
+      {
+        x: years,
+        y: rows.map((r) => r.co2n * 100),
+        name: "CO₂",
+        line: { color: "#00d9ff", width: 3 },
+        customdata: rows.map((r) => r.co2),
+        hovertemplate: "CO₂: %{customdata:.1f} ppm<extra></extra>",
+      },
+      {
+        x: years,
+        y: rows.map((r) => r.tempn * 100),
+        name: "Temperature",
+        line: { color: "#ffd84d", width: 3 },
+        customdata: rows.map((r) => r.temp),
+        hovertemplate: "Temperature: %{customdata:.2f} °C<extra></extra>",
+      },
+      {
+        x: years,
+        y: rows.map((r) => r.massn * 100),
+        name: "Antarctica mass",
+        line: { color: "#ff3b81", width: 3 },
+        customdata: rows.map((r) => r.mass),
+        hovertemplate: "Antarctica: %{customdata:.1f} GT<extra></extra>",
+      },
+      {
+        x: years,
+        y: rows.map((r) => r.sean * 100),
+        name: "Sea level",
+        line: { color: "#43e88a", width: 3 },
+        customdata: rows.map((r) => r.sea),
+        hovertemplate: "Sea level: %{customdata:.1f} mm<extra></extra>",
+      },
+    ];
+    const shapes = rows
+      .filter((r) => r.alarm)
+      .map((r) => ({
+        type: "rect",
+        xref: "x",
+        yref: "paper",
+        x0: r.year - 0.5,
+        x1: r.year + 0.5,
+        y0: 0,
+        y1: 1,
+        fillcolor: "rgba(255,23,79,.18)",
+        line: { width: 0 },
+      }));
+    const active = rows[currentIndex]?.year;
+    shapes.push({
+      type: "line",
+      xref: "x",
+      yref: "paper",
+      x0: active,
+      x1: active,
+      y0: 0,
+      y1: 1,
+      line: { color: "#fff", width: 3 },
+    });
+    const annotations = [];
+    if (years.includes(2015))
+      annotations.push({
+        x: 2015,
+        y: 72,
+        text: "📌 2015",
+        showarrow: true,
+        arrowhead: 2,
+        ay: -40,
+        font: { color: "#a88bff" },
+      });
+    if (years.includes(2023))
+      annotations.push({
+        x: 2023,
+        y: 90,
+        text: "🔥 2023",
+        showarrow: true,
+        arrowhead: 2,
+        ay: -35,
+        font: { color: "#ffd84d" },
+      });
+
+    Plotly.react(
+      "plot",
+      traces,
+      {
+        paper_bgcolor: "#111821",
+        plot_bgcolor: "#111821",
+        font: { color: "#f3f6fa" },
+        margin: { l: 55, r: 20, t: 10, b: 45 },
+        height: 520,
+        hovermode: "x unified",
+        shapes,
+        annotations,
+        xaxis: { title: "Year", showgrid: false },
+        yaxis: {
+          title: "Normalized indicator (%)",
+          range: [-5, 105],
+          gridcolor: "#293442",
+        },
+        legend: { orientation: "h", y: 1.08, x: 0 },
+      },
+      { responsive: true, displaylogo: false }
+    );
+
+    const plot = document.getElementById("plot");
+    plot.removeAllListeners?.("plotly_click");
+    plot.on("plotly_click", async (ev) => {
+      const x = ev.points?.[0]?.x;
+      const i = rows.findIndex((r) => r.year === Number(x));
+      if (i >= 0) {
+        stopJourney();
+        currentIndex = i;
+        render();
+        await playYear(i);
+      }
+    });
+  }
+
+  /* ---------------- Web Audio Musical Engine ---------------- */
+  let audioCtx = null,
+    master = null;
+
+  async function ensureAudio() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      master = audioCtx.createGain();
+      master.gain.value = 0.55;
+      master.connect(audioCtx.destination);
+    }
+    if (audioCtx.state === "suspended") {
+      await audioCtx.resume();
+    }
+  }
+
+  // First interaction audio unlock listener
+  function unlockAudioEngine() {
+    ensureAudio();
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.resume();
+    }
+    window.removeEventListener("click", unlockAudioEngine);
+    window.removeEventListener("touchstart", unlockAudioEngine);
+  }
+  window.addEventListener("click", unlockAudioEngine);
+  window.addEventListener("touchstart", unlockAudioEngine);
+
+  function envGain(node, start, dur, peak) {
+    node.gain.cancelScheduledValues(start);
+    node.gain.setValueAtTime(0.0001, start);
+    node.gain.exponentialRampToValueAtTime(
+      Math.max(0.0001, peak),
+      start + 0.045
+    );
+    node.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+  }
+
+  function tone(
+    freq,
+    dur,
+    amp,
+    type = "sine",
+    when = null,
+    ctx = null,
+    destination = null
+  ) {
+    const targetCtx = ctx || audioCtx;
+    if (!targetCtx) return;
+    const t = when ?? targetCtx.currentTime;
+    const osc = targetCtx.createOscillator(),
+      g = targetCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t);
+    envGain(g, t, dur, amp);
+    osc.connect(g).connect(destination || master);
+    osc.start(t);
+    osc.stop(t + dur + 0.03);
+  }
+
+  function noise(dur, amp, when = null, ctx = null, destination = null) {
+    const targetCtx = ctx || audioCtx;
+    if (!targetCtx) return;
+    const t = when ?? targetCtx.currentTime,
+      n = targetCtx.createBufferSource();
+    const buffer = targetCtx.createBuffer(
+      1,
+      targetCtx.sampleRate * dur,
+      targetCtx.sampleRate
+    );
+    const d = buffer.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    n.buffer = buffer;
+    const g = targetCtx.createGain();
+    envGain(g, t, dur, amp);
+    n.connect(g).connect(destination || master);
+    n.start(t);
+    n.stop(t + dur + 0.02);
+  }
+
+  async function playDataLoadedChime() {
+    await ensureAudio();
+    const now = audioCtx.currentTime;
+    tone(523.25, 0.2, 0.05, "sine", now);
+    tone(659.25, 0.2, 0.05, "sine", now + 0.12);
+    tone(783.99, 0.4, 0.06, "sine", now + 0.24);
+  }
+
+  /* ---------------- Single Year Playback ---------------- */
+  async function playYear(i) {
+    if (!rows.length) return;
+
+    stopAllAudioAndSpeech();
+    await ensureAudio();
+
+    const r = rows[i];
+    const now = audioCtx.currentTime + 0.02;
+    const duration = 0.76;
+
+    isAudioPlaying = true;
+
+    tone(r.co2Freq, 0.72, 0.18 + r.tempn * 0.12, "sine", now);
+    tone(
+      r.co2Freq * 2,
+      0.42,
+      0.06 + r.tempn * 0.05,
+      "triangle",
+      now + 0.02
+    );
+    if (r.tempn > 0.72)
+      tone(r.co2Freq * 4, 0.25, 0.03 + r.tempn * 0.03, "sine", now + 0.05);
+
+    const bassAmp = 0.08 + r.massn * 0.12;
+    tone(r.bassFreq, 0.76, bassAmp, "triangle", now);
+
+    const pulses = 1 + Math.round(r.sean * 3);
+    for (let p = 0; p < pulses; p++) {
+      const at = now + p * (0.72 / pulses);
+      tone(
+        quantize(r.co2Freq * 1.5),
+        0.1,
+        0.05 + r.tempn * 0.04,
+        "sine",
+        at
+      );
+    }
+
+    if (r.year === 2015) {
+      tone(1046.5, 0.4, 0.12, "sine", now + 0.1);
+      tone(1567.98, 0.5, 0.15, "sine", now + 0.25);
+    } else if (r.year === 2023) {
+      tone(523.25, 0.2, 0.1, "triangle", now);
+      tone(659.25, 0.2, 0.1, "triangle", now + 0.1);
+      tone(783.99, 0.3, 0.12, "triangle", now + 0.2);
+    } else if (r.alarm) {
+      noise(0.15, 0.08, now + 0.05);
+    }
+
+    setTimeout(() => {
+      if (!playing) {
+        isAudioPlaying = false;
+      }
+    }, duration * 1000);
+  }
+
+  function speakIntroSequence(rangeText) {
+    if (!("speechSynthesis" in window)) return;
+    stopAllAudioAndSpeech();
+
+    const u1 = new SpeechSynthesisUtterance(
+      "NASA Space Apps Challenge 2026 · The Earth Information Jukebox"
+    );
+    u1.volume = 0.85;
+
+    const u2 = new SpeechSynthesisUtterance("EarthAudio-365.25");
+    u2.volume = 1.0;
+    u2.pitch = 0.9;
+
+    const u3 = new SpeechSynthesisUtterance(
+      "Think of climate data as music. Every signal has a fixed meaning."
+    );
+    u3.volume = 0.85;
+
+    const u4 = new SpeechSynthesisUtterance(rangeText);
+    u4.volume = 0.85;
+
+    u1.onend = () => { if (!isAudioPlaying) window.speechSynthesis.speak(u2); };
+    u2.onend = () => { if (!isAudioPlaying) window.speechSynthesis.speak(u3); };
+    u3.onend = () => { if (!isAudioPlaying) window.speechSynthesis.speak(u4); };
+
+    window.speechSynthesis.speak(u1);
+  }
+
+  async function startJourney() {
+    if (!rows.length) return;
+    stopAllAudioAndSpeech();
+    await ensureAudio();
+    playing = true;
+    isAudioPlaying = true;
+    $("playBtn").textContent = "⏸ Pause";
+
+    clearInterval(timer);
+    await playYear(currentIndex);
+    timer = setInterval(async () => {
+      if (!playing) return;
+      if (currentIndex >= rows.length - 1) {
+        stopJourney();
+        return;
+      }
+      currentIndex++;
+      render();
+      await playYear(currentIndex);
+    }, STEP_MS);
+  }
+
+  function stopJourney() {
+    playing = false;
+    isAudioPlaying = false;
+    clearInterval(timer);
+    timer = null;
+    $("playBtn").textContent = "▶ Play Journey";
+  }
+
+  /* ---------------- WAV Rendering & Audio Exporters ---------------- */
+  async function generateYearWavBlob(rowIndex) {
+    const r = rows[rowIndex];
+    if (!r) return null;
+
+    const sampleRate = 44100;
+    const duration = 0.85;
+    const offlineCtx = new OfflineAudioContext(1, sampleRate * duration, sampleRate);
+    const now = 0.02;
+
+    tone(r.co2Freq, 0.72, 0.18 + r.tempn * 0.12, "sine", now, offlineCtx, offlineCtx.destination);
+    tone(r.co2Freq * 2, 0.42, 0.06 + r.tempn * 0.05, "triangle", now + 0.02, offlineCtx, offlineCtx.destination);
+    if (r.tempn > 0.72) {
+      tone(r.co2Freq * 4, 0.25, 0.03 + r.tempn * 0.03, "sine", now + 0.05, offlineCtx, offlineCtx.destination);
+    }
+
+    const bassAmp = 0.08 + r.massn * 0.12;
+    tone(r.bassFreq, 0.76, bassAmp, "triangle", now, offlineCtx, offlineCtx.destination);
+
+    const pulses = 1 + Math.round(r.sean * 3);
+    for (let p = 0; p < pulses; p++) {
+      const at = now + p * (0.72 / pulses);
+      tone(quantize(r.co2Freq * 1.5), 0.1, 0.05 + r.tempn * 0.04, "sine", at, offlineCtx, offlineCtx.destination);
+    }
+
+    if (r.year === 2015) {
+      tone(1046.5, 0.4, 0.12, "sine", now + 0.1, offlineCtx, offlineCtx.destination);
+      tone(1567.98, 0.5, 0.15, "sine", now + 0.25, offlineCtx, offlineCtx.destination);
+    } else if (r.year === 2023) {
+      tone(523.25, 0.2, 0.1, "triangle", now, offlineCtx, offlineCtx.destination);
+      tone(659.25, 0.2, 0.1, "triangle", now + 0.1, offlineCtx, offlineCtx.destination);
+      tone(783.99, 0.3, 0.12, "triangle", now + 0.2, offlineCtx, offlineCtx.destination);
+    } else if (r.alarm) {
+      noise(0.15, 0.08, now + 0.05, offlineCtx, offlineCtx.destination);
+    }
+
+    const renderedBuffer = await offlineCtx.startRendering();
+    return bufferToWaveBlob(renderedBuffer);
+  }
+
+  async function generateFullTimelineWavBlob() {
+    if (!rows.length) return null;
+
+    const sampleRate = 44100;
+    const stepDuration = STEP_MS / 1000;
+    const totalDuration = rows.length * stepDuration;
+    const offlineCtx = new OfflineAudioContext(1, sampleRate * totalDuration, sampleRate);
+
+    rows.forEach((r, index) => {
+      const yearStartTime = index * stepDuration + 0.02;
+
+      tone(r.co2Freq, 0.72, 0.18 + r.tempn * 0.12, "sine", yearStartTime, offlineCtx, offlineCtx.destination);
+      tone(r.co2Freq * 2, 0.42, 0.06 + r.tempn * 0.05, "triangle", yearStartTime + 0.02, offlineCtx, offlineCtx.destination);
+      if (r.tempn > 0.72) {
+        tone(r.co2Freq * 4, 0.25, 0.03 + r.tempn * 0.03, "sine", yearStartTime + 0.05, offlineCtx, offlineCtx.destination);
+      }
+
+      const bassAmp = 0.08 + r.massn * 0.12;
+      tone(r.bassFreq, 0.76, bassAmp, "triangle", yearStartTime, offlineCtx, offlineCtx.destination);
+
+      const pulses = 1 + Math.round(r.sean * 3);
+      for (let p = 0; p < pulses; p++) {
+        const pulseTime = yearStartTime + p * (0.72 / pulses);
+        tone(quantize(r.co2Freq * 1.5), 0.1, 0.05 + r.tempn * 0.04, "sine", pulseTime, offlineCtx, offlineCtx.destination);
+      }
+
+      if (r.year === 2015) {
+        tone(1046.5, 0.4, 0.12, "sine", yearStartTime + 0.1, offlineCtx, offlineCtx.destination);
+        tone(1567.98, 0.5, 0.15, "sine", yearStartTime + 0.25, offlineCtx, offlineCtx.destination);
+      } else if (r.year === 2023) {
+        tone(523.25, 0.2, 0.1, "triangle", yearStartTime, offlineCtx, offlineCtx.destination);
+        tone(659.25, 0.2, 0.1, "triangle", yearStartTime + 0.1, offlineCtx, offlineCtx.destination);
+        tone(783.99, 0.3, 0.12, "triangle", yearStartTime + 0.2, offlineCtx, offlineCtx.destination);
+      } else if (r.alarm) {
+        noise(0.15, 0.08, yearStartTime + 0.05, offlineCtx, offlineCtx.destination);
+      }
+    });
+
+    const renderedBuffer = await offlineCtx.startRendering();
+    return bufferToWaveBlob(renderedBuffer);
+  }
+
+  function bufferToWaveBlob(abuffer) {
+    const numOfChan = abuffer.numberOfChannels,
+      length = abuffer.length * numOfChan * 2 + 44,
+      out = new DataView(new ArrayBuffer(length)),
+      channels = [];
+    let sample, offset = 0, pos = 0;
+
+    function setUint16(data) { out.setUint16(pos, data, true); pos += 2; }
+    function setUint32(data) { out.setUint32(pos, data, true); pos += 4; }
+
+    setUint32(0x46464952); // "RIFF"
+    setUint32(length - 8);
+    setUint32(0x45564157); // "WAVE"
+    setUint32(0x20746d66); // "fmt "
+    setUint32(16);          // SubChunk1Size
+    setUint16(1);           // AudioFormat
+    setUint16(numOfChan);
+    setUint32(abuffer.sampleRate);
+    setUint32(abuffer.sampleRate * 2 * numOfChan);
+    setUint16(numOfChan * 2);
+    setUint16(16);          // BitsPerSample
+    setUint32(0x61746164); // "data"
+    setUint32(length - pos - 4);
+
+    for (let i = 0; i < abuffer.numberOfChannels; i++) channels.push(abuffer.getChannelData(i));
+    while (pos < length) {
+      for (let i = 0; i < numOfChan; i++) {
+        sample = Math.max(-1, Math.min(1, channels[i][offset]));
+        sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0;
+        out.setInt16(pos, sample, true);
+        pos += 2;
+      }
+      offset++;
+    }
+    return new Blob([out], { type: "audio/wav" });
+  }
+  /* =========================================================
+   Single Trend Audio Preview & Export Functions
+   ========================================================= */
+
+// Map indicator keys to user-friendly titles
+const TREND_TITLES = {
+  co2: "CO2 Trend (Pitch)",
+  temp: "Temperature Anomaly (Brightness)",
+  sea: "Sea Level Rise (Rhythm)",
+  mass: "Antarctica Ice Mass (Bass)"
+};
+
+/**
+ * Plays a 3-second continuous sweep representing the single trend
+ */
+async function playSingleTrend(type) {
+  if (!rows.length) return;
+  stopAllAudioAndSpeech();
+  await ensureAudio();
+
+  isAudioPlaying = true;
+  const now = audioCtx.currentTime + 0.02;
+  const dur = 3.0; // 3 seconds preview
+
+  rows.forEach((r, idx) => {
+    const t = now + (idx / rows.length) * dur;
+    const stepDur = dur / rows.length;
+
+    if (type === 'co2') {
+      tone(r.co2Freq, stepDur * 1.2, 0.18, "sine", t);
+    } else if (type === 'temp') {
+      tone(440 * (1 + r.tempn), stepDur * 1.2, 0.15, "triangle", t);
+    } else if (type === 'sea') {
+      const pulseFreq = 300 + r.sean * 400;
+      tone(pulseFreq, stepDur * 0.8, 0.12, "sine", t);
+    } else if (type === 'mass') {
+      tone(r.bassFreq, stepDur * 1.2, 0.22, "triangle", t);
+    }
+  });
+
+  setTimeout(() => {
+    isAudioPlaying = false;
+  }, dur * 1000);
+}
+
+/**
+ * Renders and downloads a WAV file for the specified single trend
+ */
+async function downloadSingleTrend(type) {
+  if (!rows.length) return;
+
+  const sampleRate = 44100;
+  const totalDuration = 4.0; // 4 second WAV file
+  const offlineCtx = new OfflineAudioContext(1, sampleRate * totalDuration, sampleRate);
+  const now = 0.02;
+
+  rows.forEach((r, idx) => {
+    const t = now + (idx / rows.length) * (totalDuration - 0.2);
+    const stepDur = (totalDuration - 0.2) / rows.length;
+
+    if (type === 'co2') {
+      tone(r.co2Freq, stepDur * 1.2, 0.18, "sine", t, offlineCtx, offlineCtx.destination);
+    } else if (type === 'temp') {
+      tone(440 * (1 + r.tempn), stepDur * 1.2, 0.15, "triangle", t, offlineCtx, offlineCtx.destination);
+    } else if (type === 'sea') {
+      const pulseFreq = 300 + r.sean * 400;
+      tone(pulseFreq, stepDur * 0.8, 0.12, "sine", t, offlineCtx, offlineCtx.destination);
+    } else if (type === 'mass') {
+      tone(r.bassFreq, stepDur * 1.2, 0.22, "triangle", t, offlineCtx, offlineCtx.destination);
+    }
+  });
+
+  try {
+    const renderedBuffer = await offlineCtx.startRendering();
+    const wavBlob = bufferToWaveBlob(renderedBuffer);
+    if (!wavBlob) throw new Error("Could not render single trend audio.");
+
+    const blobUrl = URL.createObjectURL(wavBlob);
+    const anchor = document.createElement("a");
+    anchor.href = blobUrl;
+    anchor.download = `EarthAudio-Trend-${type.toUpperCase()}.wav`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(blobUrl);
+
+    speak(`Downloaded ${TREND_TITLES[type] || type} audio sonification.`);
+  } catch (err) {
+    console.error("Single Trend Export Error:", err);
+  }
+}
+
+  /* ---------------- Event Handlers ---------------- */
+  $("playBtn").onclick = async () => {
+    await ensureAudio();
+    if (playing) {
+      stopJourney();
+    } else {
+      await startJourney();
+    }
+  };
+  $("stopBtn").onclick = () => {
+    stopJourney();
+    stopAllAudioAndSpeech();
+    currentIndex = 0;
+    render();
+  };
+  $("replayBtn").onclick = async () => {
+    await ensureAudio();
+    stopJourney();
+    currentIndex = 0;
+    render();
+    await startJourney();
+  };
+  $("prevBtn").onclick = async () => {
+    await ensureAudio();
+    stopJourney();
+    currentIndex = clamp(currentIndex - 1, 0, rows.length - 1);
+    render();
+    await playYear(currentIndex);
+  };
+  $("nextBtn").onclick = async () => {
+    await ensureAudio();
+    stopJourney();
+    currentIndex = clamp(currentIndex + 1, 0, rows.length - 1);
+    render();
+    await playYear(currentIndex);
+  };
+  $("yearSlider").oninput = (e) => {
+    stopJourney();
+    currentIndex = Number(e.target.value);
+    render();
+  };
+
+  /* Optional Download Buttons (safely checks if buttons exist in HTML) */
+  if ($("downloadBtn")) {
+    $("downloadBtn").onclick = async () => {
+      if (!rows.length) return;
+      const currentYear = rows[currentIndex].year;
+      const originalText = $("downloadBtn").textContent;
+      $("downloadBtn").textContent = "⌛ Rendering WAV...";
+      $("downloadBtn").disabled = true;
+
+      try {
+        const wavBlob = await generateYearWavBlob(currentIndex);
+        if (!wavBlob) throw new Error("Could not generate audio file.");
+
+        const blobUrl = URL.createObjectURL(wavBlob);
+        const anchor = document.createElement("a");
+        anchor.href = blobUrl;
+        anchor.download = `EarthAudio-${currentYear}.wav`;
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+        URL.revokeObjectURL(blobUrl);
+
+        speak(`Downloaded audio sonification for year ${currentYear}`);
+      } catch (err) {
+        console.error("WAV Download Error:", err);
+      } finally {
+        $("downloadBtn").textContent = originalText;
+        $("downloadBtn").disabled = false;
+      }
+    };
+  }
+
+  if ($("downloadFullBtn")) {
+    $("downloadFullBtn").onclick = async () => {
+      if (!rows.length) return;
+      const startYear = rows[0].year;
+      const endYear = rows[rows.length - 1].year;
+      const originalText = $("downloadFullBtn").textContent;
+      $("downloadFullBtn").textContent = "⌛ Rendering full track...";
+      $("downloadFullBtn").disabled = true;
+
+      try {
+        const wavBlob = await generateFullTimelineWavBlob();
+        if (!wavBlob) throw new Error("Could not render timeline audio.");
+
+        const blobUrl = URL.createObjectURL(wavBlob);
+        const anchor = document.createElement("a");
+        anchor.href = blobUrl;
+        anchor.download = `EarthAudio-Timeline-${startYear}-${endYear}.wav`;
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+        URL.revokeObjectURL(blobUrl);
+
+        speak(`Downloaded full climate sonification sequence from ${startYear} to ${endYear}`);
+      } catch (err) {
+        console.error("Timeline Export Error:", err);
+      } finally {
+        $("downloadFullBtn").textContent = originalText;
+        $("downloadFullBtn").disabled = false;
+      }
+    };
+  }
+
+  /* Accessible Speech Hover Events */
+  $("appHeader").onmouseenter = () => speak("Earth Audio 365 point 25 header");
+  $("dataState").onmouseenter = () => speak($("dataState").textContent);
+
+  $("demoCo2").onmouseenter = $("demoCo2").onfocus = () => speak("Carbon dioxide as pitch");
+  $("demoTemp").onmouseenter = $("demoTemp").onfocus = () => speak("Temperature as brightness");
+  $("demoSea").onmouseenter = $("demoSea").onfocus = () => speak("Sea level pulse as rhythm");
+  $("demoMass").onmouseenter = $("demoMass").onfocus = () => speak("Antarctic mass as bass");
+
+  $("mCo2").onmouseenter = $("mCo2").onfocus = () => speak(`Carbon Dioxide: ${$("co2").textContent}`);
+  $("mTemp").onmouseenter = $("mTemp").onfocus = () => speak(`Temperature anomaly: ${$("temp").textContent}`);
+  $("mMass").onmouseenter = $("mMass").onfocus = () => speak(`Antarctic mass: ${$("mass").textContent}`);
+  $("mSea").onmouseenter = $("mSea").onfocus = () => speak(`Sea level rise: ${$("sea").textContent}`);
+
+  $("news2025").onmouseenter = $("news2025").onfocus = () => {
+    speak("2025 Climate Update: Record Marine Heatwaves and Global Greenhouse Gas Peaks.");
+  };
+  $("news2023").onmouseenter = $("news2023").onfocus = () => {
+    speak("2023 Climate Landmark: Earth Shatters Surface Temperature Thresholds.");
+  };
+
+  loadData();
+</script>
+  </body>
+</html>
